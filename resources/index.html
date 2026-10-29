@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pop!_OS Super Power</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main id="app">
+      <header class="header">
+        <h1>Pop!_OS Super Power</h1>
+        <p class="subtitle">Power profiles &amp; GPU mode via <code>system76-power</code></p>
+      </header>
+
+      <p id="load-error" class="banner banner-error hidden" role="alert"></p>
+
+      <section class="panel" aria-labelledby="profile-heading">
+        <h2 id="profile-heading">Power profile</h2>
+        <p class="hint">Applies immediately. No reboot required.</p>
+        <div class="toggle-group" id="profile-toggles" role="group" aria-label="Power profile">
+          <button type="button" class="toggle" data-value="battery">Battery</button>
+          <button type="button" class="toggle" data-value="balanced">Balanced</button>
+          <button type="button" class="toggle" data-value="performance">Performance</button>
+        </div>
+      </section>
+
+      <section class="panel" id="graphics-panel" aria-labelledby="graphics-heading">
+        <h2 id="graphics-heading">GPU mode</h2>
+        <p class="hint">Switching mode requires a reboot on Pop!_OS.</p>
+        <div class="toggle-group" id="graphics-toggles" role="group" aria-label="GPU mode">
+          <button type="button" class="toggle" data-value="integrated">Integrated</button>
+          <button type="button" class="toggle" data-value="nvidia">Discrete</button>
+          <button type="button" class="toggle" data-value="hybrid">Hybrid</button>
+        </div>
+        <div id="reboot-banner" class="banner banner-warn hidden">
+          <p>GPU mode was updated. Reboot to apply the new graphics mode.</p>
+          <button type="button" id="reboot-btn" class="btn-primary">Reboot now</button>
+        </div>
+      </section>
+
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </main>
+
+    <script src="/js/neutralino.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

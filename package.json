@@ -1,0 +1,14 @@
+{
+  "name": "pop-os-super-power",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pop!_OS power profile and GPU mode controls",
+  "scripts": {
+    "start": "neu run",
+    "build": "neu build",
+    "update": "neu update"
+  },
+  "devDependencies": {
+    "@neutralinojs/neu": "^11.8.0"
+  }
+}
