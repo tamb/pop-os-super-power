@@ -25,6 +25,8 @@ npm run build:app     # esbuild → resources/js/main.js
 npm start             # build UI + neu run
 ```
 
+`npm install` installs a **pre-push** hook (`.git/hooks/pre-push` → `scripts/git-hooks/pre-push`). It formats `src/`, stops the push if that changes files, then lints and runs tests.
+
 Pull requests to `main` run lint, typecheck, tests, and a Linux-only app build.
 
 ## Build a portable app
