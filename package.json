@@ -2,13 +2,20 @@
   "name": "pop-os-super-power",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Pop!_OS power profile and GPU mode controls",
   "scripts": {
-    "start": "neu run",
-    "build": "neu build",
+    "typecheck": "tsc -p tsconfig.json",
+    "build:app": "esbuild src/app/main.ts --bundle --outfile=resources/js/main.js --format=esm --platform=browser --target=es2022",
+    "test": "node --test --experimental-strip-types src/**/*.test.ts",
+    "start": "npm run build:app && neu run",
+    "build": "npm run build:app && neu build",
     "update": "neu update"
   },
   "devDependencies": {
-    "@neutralinojs/neu": "^11.8.0"
+    "@neutralinojs/neu": "^11.8.0",
+    "@types/node": "^22.15.0",
+    "esbuild": "^0.25.4",
+    "typescript": "^5.8.3"
   }
 }

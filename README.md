@@ -9,31 +9,34 @@ GPU mode changes show a **Reboot now** button because Pop!_OS requires a restart
 
 ## Requirements
 
-- Pop!_OS (or another Linux install with `system76-power` and switchable graphics)
-- [Neutralinojs CLI](https://neutralino.js.org/docs/getting-started/installation) (`npm i -g @neutralinojs/neu`) for development builds
+- Pop!_OS (or Linux with `system76-power` and switchable graphics)
+- Node.js 22+ (native TypeScript tests use `--experimental-strip-types`)
+- [Neutralinojs CLI](https://neutralino.js.org/docs/getting-started/installation) (`npm i` in this repo)
 
-## Run from source
+## Development
 
 ```bash
-cd pop-os-super-power
-neu run
+npm install
+npm test              # node:test on src/lib (native TS)
+npm run typecheck     # tsc (app + lib, no emit)
+npm run build:app     # esbuild → resources/js/main.js
+npm start             # build UI + neu run
 ```
 
 ## Build a portable app
 
 ```bash
-neu build
-```
-
-The Linux binary and bundled resources are written to `dist/pop-os-super-power/`. Run:
-
-```bash
+npm run build
 ./dist/pop-os-super-power/pop-os-super-power
 ```
 
-## Optional desktop entry
+## Project layout
 
-After building, you can add a launcher that runs the binary from `dist/pop-os-super-power/`.
+| Path | Role |
+|------|------|
+| `src/lib/` | Pure TypeScript (parsing, shell helpers) — covered by `npm test` |
+| `src/app/` | Neutralino UI + `system76-power` execution (TypeScript) |
+| `resources/js/main.js` | Bundled UI (`esbuild`; generated, not committed) |
 
 ## Notes
 
