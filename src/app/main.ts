@@ -1,9 +1,7 @@
 import {
-  GRAPHICS_MODES,
+  type GraphicsMode,
   isGraphicsMode,
   isPowerProfile,
-  PROFILES,
-  type GraphicsMode,
 } from "../lib/constants.ts";
 import { shouldShowRebootBanner } from "../lib/system76-output.ts";
 import {

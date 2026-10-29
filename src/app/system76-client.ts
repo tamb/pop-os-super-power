@@ -1,88 +1,52 @@
+import type { GraphicsMode, PowerProfile } from "../lib/constants.ts";
 import {
-  type GraphicsMode,
-  type PowerProfile,
-} from "../lib/constants.ts";
-import {
-  execResultLooksLikePermissionDenied,
-  formatExecFailure,
-  pkexecSystem76PowerCommand,
-  system76PowerCommand,
-} from "../lib/shell.ts";
-import {
-  graphicsModeForUi,
-  parseGraphicsOutput,
-  parseProfileOutput,
-  parseSwitchableOutput,
-} from "../lib/system76-output.ts";
-import {
-  execCommand,
-  getSessionEnv,
-} from "./neutralino-runtime.ts";
+  applyGraphics as applyGraphicsCore,
+  applyProfile as applyProfileCore,
+  commandExists as commandExistsCore,
+  fetchGraphicsMode as fetchGraphicsModeCore,
+  fetchProfile as fetchProfileCore,
+  fetchSwitchable as fetchSwitchableCore,
+  rebootSystem as rebootSystemCore,
+  runSystem76Power as runSystem76PowerCore,
+} from "../lib/power-client.ts";
+import { sessionEnvFromStrings } from "../lib/shell.ts";
+import { execCommand, getSessionEnv } from "./neutralino-runtime.ts";
+
+async function sessionEnv() {
+  const raw = await getSessionEnv();
+  return sessionEnvFromStrings(raw.display, raw.xauthority);
+}
 
 export async function runSystem76Power(args: string): Promise<string> {
-  const env = await getSessionEnv();
-  let cmd = system76PowerCommand(args, env);
-  let result = await execCommand(cmd);
-
-  if (
-    result.exitCode !== 0 &&
-    execResultLooksLikePermissionDenied(result.stdOut, result.stdErr)
-  ) {
-    cmd = pkexecSystem76PowerCommand(args, env);
-    result = await execCommand(cmd);
-  }
-
-  if (result.exitCode !== 0) {
-    throw new Error(
-      formatExecFailure(result.exitCode, result.stdOut, result.stdErr),
-    );
-  }
-
-  return (result.stdOut || "").trim();
+  return runSystem76PowerCore(args, await sessionEnv(), execCommand);
 }
 
 export async function commandExists(name: string): Promise<boolean> {
-  const result = await execCommand(
-    `command -v ${name} >/dev/null 2>&1; echo $?`,
-  );
-  return result.stdOut.trim() === "0";
+  return commandExistsCore(name, execCommand);
 }
 
 export async function rebootSystem(): Promise<void> {
-  const result = await execCommand("loginctl reboot");
-  if (result.exitCode !== 0) {
-    const pk = await execCommand("pkexec loginctl reboot");
-    if (pk.exitCode !== 0) {
-      throw new Error(
-        formatExecFailure(
-          pk.exitCode,
-          pk.stdOut || result.stdOut,
-          pk.stdErr || result.stdErr,
-        ) || "Could not start reboot.",
-      );
-    }
-  }
+  return rebootSystemCore(execCommand);
 }
 
 export async function fetchProfile(): Promise<PowerProfile> {
-  return parseProfileOutput(await runSystem76Power("profile"));
+  return fetchProfileCore(await sessionEnv(), execCommand);
 }
 
 export async function fetchGraphicsMode(): Promise<GraphicsMode> {
-  const raw = parseGraphicsOutput(await runSystem76Power("graphics"));
-  return graphicsModeForUi(raw);
+  return fetchGraphicsModeCore(await sessionEnv(), execCommand);
 }
 
 export async function fetchSwitchable(): Promise<boolean> {
-  return parseSwitchableOutput(await runSystem76Power("graphics switchable"));
+  return fetchSwitchableCore(await sessionEnv(), execCommand);
 }
 
 export async function applyProfile(profile: PowerProfile): Promise<void> {
-  await runSystem76Power(`profile ${profile}`);
+  await applyProfileCore(profile, await sessionEnv(), execCommand);
 }
 
 export async function applyGraphics(mode: GraphicsMode): Promise<void> {
-  await runSystem76Power(`graphics ${mode}`);
+  await applyGraphicsCore(mode, await sessionEnv(), execCommand);
 }
 
 export { messageFromError } from "../lib/errors.ts";

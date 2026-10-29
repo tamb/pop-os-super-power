@@ -1,20 +1,24 @@
 {
   "name": "pop-os-super-power",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.0",
   "private": true,
   "type": "module",
   "description": "Pop!_OS power profile and GPU mode controls",
   "scripts": {
+    "fix": "biome check --write src",
+    "lint": "biome check src",
+    "format": "biome check --write src",
     "typecheck": "tsc -p tsconfig.json",
     "build:app": "esbuild src/app/main.ts --bundle --outfile=resources/js/main.js --format=esm --platform=browser --target=es2022",
     "test": "node --test --experimental-strip-types src/**/*.test.ts",
     "start": "npm run build:app && neu run",
-    "build": "npm run build:app && neu build",
+    "build": "npm run build:app && node scripts/keep-linux-only.mjs bin && neu build --clean && node scripts/keep-linux-only.mjs dist",
     "update": "neu update"
   },
   "devDependencies": {
     "@neutralinojs/neu": "^11.8.0",
     "@types/node": "^22.15.0",
+    "@biomejs/biome": "^2.3.0",
     "esbuild": "^0.25.4",
     "typescript": "^5.8.3"
   }

@@ -23,7 +23,10 @@ export function sessionEnvPrefix(env: SessionEnv): string {
   return `env ${parts.join(" ")} `;
 }
 
-export function system76PowerCommand(args: string, env: SessionEnv = {}): string {
+export function system76PowerCommand(
+  args: string,
+  env: SessionEnv = {},
+): string {
   return `${sessionEnvPrefix(env)}system76-power ${args}`;
 }
 
@@ -48,7 +51,19 @@ export function formatExecFailure(
   exitCode: number,
   stdout: string,
   stderr: string,
+  command = "system76-power",
 ): string {
   const detail = (stderr || stdout).trim();
-  return detail || `system76-power failed (exit ${exitCode})`;
+  return detail || `${command} failed (exit ${exitCode})`;
+}
+
+/** Drop empty Neutralino env strings so they are not quoted into the command. */
+export function sessionEnvFromStrings(
+  display: string,
+  xauthority: string,
+): SessionEnv {
+  return {
+    ...(display ? { display } : {}),
+    ...(xauthority ? { xauthority } : {}),
+  };
 }

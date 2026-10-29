@@ -1,8 +1,10 @@
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
   execResultLooksLikePermissionDenied,
+  formatExecFailure,
   pkexecSystem76PowerCommand,
+  sessionEnvFromStrings,
   sessionEnvPrefix,
   shellQuote,
   system76PowerCommand,
@@ -23,6 +25,13 @@ describe("sessionEnvPrefix", () => {
     assert.equal(sessionEnvPrefix({}), "");
   });
 
+  it("includes only the vars that are set", () => {
+    assert.equal(
+      sessionEnvPrefix({ xauthority: "/tmp/X0" }),
+      "env XAUTHORITY='/tmp/X0' ",
+    );
+  });
+
   it("includes DISPLAY and XAUTHORITY when set", () => {
     assert.equal(
       sessionEnvPrefix({ display: ":0", xauthority: "/tmp/X0" }),
@@ -31,9 +40,33 @@ describe("sessionEnvPrefix", () => {
   });
 });
 
+describe("sessionEnvFromStrings", () => {
+  it("omits empty Neutralino env values", () => {
+    assert.deepEqual(sessionEnvFromStrings("", ""), {});
+    assert.deepEqual(sessionEnvFromStrings(":0", ""), { display: ":0" });
+  });
+});
+
+describe("formatExecFailure", () => {
+  it("prefers stderr and falls back to a command label", () => {
+    assert.equal(formatExecFailure(1, "stdout", "stderr"), "stderr");
+    assert.equal(
+      formatExecFailure(2, "", "  "),
+      "system76-power failed (exit 2)",
+    );
+    assert.equal(
+      formatExecFailure(3, "", "", "loginctl reboot"),
+      "loginctl reboot failed (exit 3)",
+    );
+  });
+});
+
 describe("system76PowerCommand", () => {
   it("builds a plain command", () => {
-    assert.equal(system76PowerCommand("profile battery"), "system76-power profile battery");
+    assert.equal(
+      system76PowerCommand("profile battery"),
+      "system76-power profile battery",
+    );
   });
 
   it("prefixes session env", () => {
@@ -62,6 +95,9 @@ describe("execResultLooksLikePermissionDenied", () => {
   });
 
   it("ignores unrelated failures", () => {
-    assert.equal(execResultLooksLikePermissionDenied("No such profile", ""), false);
+    assert.equal(
+      execResultLooksLikePermissionDenied("No such profile", ""),
+      false,
+    );
   });
 });

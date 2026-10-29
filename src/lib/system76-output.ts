@@ -1,6 +1,6 @@
 import {
-  type GraphicsMode,
   GRAPHICS_MODES,
+  type GraphicsMode,
   isPowerProfile,
   type PowerProfile,
 } from "./constants.ts";

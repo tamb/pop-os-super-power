@@ -1,5 +1,5 @@
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
   graphicsModeForUi,
   parseGraphicsOutput,
@@ -13,10 +13,18 @@ describe("parseProfileOutput", () => {
     const out = `Power Profile: Battery
 CPU: 18% - 50%, No Turbo`;
     assert.equal(parseProfileOutput(out), "battery");
+    assert.equal(parseProfileOutput("Power Profile: Balanced"), "balanced");
+    assert.equal(
+      parseProfileOutput("Power Profile: Performance"),
+      "performance",
+    );
   });
 
   it("throws when profile line is missing", () => {
-    assert.throws(() => parseProfileOutput("CPU only"), /Could not read power profile/);
+    assert.throws(
+      () => parseProfileOutput("CPU only"),
+      /Could not read power profile/,
+    );
   });
 
   it("throws on unknown profile name", () => {
@@ -37,7 +45,10 @@ describe("parseGraphicsOutput", () => {
   });
 
   it("rejects unknown modes", () => {
-    assert.throws(() => parseGraphicsOutput("unknown"), /Unexpected graphics mode/);
+    assert.throws(
+      () => parseGraphicsOutput("unknown"),
+      /Unexpected graphics mode/,
+    );
   });
 });
 

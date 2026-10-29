@@ -17,25 +17,31 @@ GPU mode changes show a **Reboot now** button because Pop!_OS requires a restart
 
 ```bash
 npm install
-npm test              # node:test on src/lib (native TS)
+npm test              # node:test (native TypeScript)
+npm run lint          # Biome on src/ only
+npm run format        # Biome format + lint fixes on src/
 npm run typecheck     # tsc (app + lib, no emit)
 npm run build:app     # esbuild → resources/js/main.js
 npm start             # build UI + neu run
 ```
 
+Pull requests to `main` run lint, typecheck, tests, and a Linux-only app build.
+
 ## Build a portable app
+
+`neu build` copies every Neutralino binary in `bin/`. `npm run build` removes Windows and macOS binaries before and after that step, so `dist/` contains Linux builds only (`x64`, `arm64`, and `armhf`).
 
 ```bash
 npm run build
-./dist/pop-os-super-power/pop-os-super-power
+./dist/pop-os-super-power/pop-os-super-power-linux_x64
 ```
 
 ## Project layout
 
 | Path | Role |
 |------|------|
-| `src/lib/` | Pure TypeScript (parsing, shell helpers) — covered by `npm test` |
-| `src/app/` | Neutralino UI + `system76-power` execution (TypeScript) |
+| `src/lib/` | Pure TypeScript (parsing, shell helpers, command flow) — covered by `npm test` |
+| `src/app/` | Neutralino UI. Calls into `src/lib` |
 | `resources/js/main.js` | Bundled UI (`esbuild`; generated, not committed) |
 
 ## Notes
