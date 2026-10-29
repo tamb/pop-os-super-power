@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Format staged src files, lint, and test before a commit.
+# Installed by scripts/install-git-hooks.mjs.
+set -euo pipefail
+
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+
+if [[ ! -x node_modules/.bin/biome ]]; then
+  echo "pre-commit: install dependencies first (npm install)"
+  exit 1
+fi
+
+mapfile -t staged < <(git diff --cached --name-only --diff-filter=ACMR -- src)
+
+if ((${#staged[@]} > 0)); then
+  echo "pre-commit: format"
+  ./node_modules/.bin/biome check --write -- "${staged[@]}"
+  git add -- "${staged[@]}"
+fi
+
+echo "pre-commit: lint"
+npm run lint
+
+echo "pre-commit: test"
+npm test

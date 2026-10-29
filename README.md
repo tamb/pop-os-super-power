@@ -25,7 +25,7 @@ npm run build:app     # esbuild → resources/js/main.js
 npm start             # build UI + neu run
 ```
 
-`npm install` installs a **pre-push** hook (`.git/hooks/pre-push` → `scripts/git-hooks/pre-push`). It formats `src/`, stops the push if that changes files, then lints and runs tests.
+`npm install` installs a **pre-commit** hook (`.git/hooks/pre-commit` → `scripts/git-hooks/pre-commit`). It formats staged files under `src/` and includes those edits in the commit, then lints and runs tests.
 
 Pull requests to `main` run lint, typecheck, tests, and a Linux-only app build.
 
