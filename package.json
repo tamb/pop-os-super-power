@@ -11,6 +11,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "build:app": "esbuild src/app/main.ts --bundle --outfile=resources/js/main.js --format=esm --platform=browser --target=es2022",
     "test": "node --test --experimental-strip-types src/**/*.test.ts",
+    "prepare": "node scripts/install-git-hooks.mjs",
     "start": "npm run build:app && neu run",
     "build": "npm run build:app && node scripts/keep-linux-only.mjs bin && neu build --clean && node scripts/keep-linux-only.mjs dist",
     "update": "neu update"
