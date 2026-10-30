@@ -16,15 +16,20 @@
   "nativeAllowList": [
     "app.*",
     "os.*",
-    "debug.log"
+    "debug.log",
+    "clipboard.writeText",
+    "filesystem.getStats",
+    "filesystem.writeFile",
+    "filesystem.writeBinaryFile",
+    "filesystem.remove"
   ],
   "modes": {
     "window": {
       "title": "Pop!_OS Super Power",
       "width": 440,
-      "height": 560,
+      "height": 730,
       "minWidth": 380,
-      "minHeight": 480,
+      "minHeight": 620,
       "center": true,
       "fullScreen": false,
       "alwaysOnTop": false,

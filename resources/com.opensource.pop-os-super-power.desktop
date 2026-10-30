@@ -1,8 +1,11 @@
 [Desktop Entry]
 Type=Application
+Version=1.0
 Name=Pop!_OS Super Power
 Comment=Power profiles and GPU mode for Pop!_OS
 Exec=pop-os-super-power
 Icon=pop-os-super-power
-Categories=Settings;System;
+Terminal=false
+Categories=Settings;
 StartupNotify=true
+StartupWMClass=pop-os-super-power

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   applyGraphics,
+  applyProfile,
   type CommandRunner,
   commandExists,
   type ExecResult,
@@ -115,6 +116,62 @@ describe("rebootSystem", () => {
   });
 });
 
+const SCSI_HOST_FAILURE =
+  "org.freedesktop.DBus.Error.Failed Errors found when setting profile: - failed to set scsi host profiles: failed to set link time power management policy med_power_with_dipm on host3: Operation not supported (os error 95)";
+
+describe("applyProfile", () => {
+  it("returns after a clean profile change", async () => {
+    const run = scripted([ok("")]);
+    assert.deepEqual(await applyProfile("performance", {}, run), {
+      scsiLinkPmSkipped: false,
+    });
+    assert.deepEqual(run.calls, ["system76-power profile performance"]);
+  });
+
+  it("retries when the only failure is an unsupported SCSI host", async () => {
+    const run = scripted([fail(SCSI_HOST_FAILURE), ok("")]);
+    assert.deepEqual(await applyProfile("battery", {}, run), {
+      scsiLinkPmSkipped: true,
+    });
+    assert.deepEqual(run.calls, [
+      "system76-power profile battery",
+      "system76-power profile battery",
+    ]);
+  });
+
+  it("accepts the profile when the retry reports the same SCSI failure but the daemon stored it", async () => {
+    const run = scripted([
+      fail(SCSI_HOST_FAILURE),
+      fail(SCSI_HOST_FAILURE),
+      ok("Power Profile: Performance\n"),
+    ]);
+    assert.deepEqual(await applyProfile("performance", {}, run), {
+      scsiLinkPmSkipped: true,
+    });
+  });
+
+  it("still fails when the daemon did not store the profile", async () => {
+    const run = scripted([
+      fail(SCSI_HOST_FAILURE),
+      fail(SCSI_HOST_FAILURE),
+      ok("Power Profile: Balanced\n"),
+    ]);
+    await assert.rejects(
+      () => applyProfile("performance", {}, run),
+      /host3: Operation not supported/,
+    );
+  });
+
+  it("does not retry unrelated profile failures", async () => {
+    const run = scripted([fail("No such profile 'turbo'")]);
+    await assert.rejects(
+      () => applyProfile("balanced", {}, run),
+      /No such profile 'turbo'/,
+    );
+    assert.equal(run.calls.length, 1);
+  });
+});
+
 describe("fetch helpers", () => {
   it("parses the active profile", async () => {
     const run = scripted([ok("Power Profile: Performance\nCPU: uncapped")]);
@@ -130,6 +187,21 @@ describe("fetch helpers", () => {
     const run = scripted([ok("")]);
     await applyGraphics("nvidia", {}, run);
     assert.deepEqual(run.calls, ["system76-power graphics nvidia"]);
+  });
+
+  it("reports when a graphics change needs authentication", async () => {
+    const run = scripted([fail("Operation not permitted"), ok("")]);
+    const events: string[] = [];
+    await applyGraphics("hybrid", { display: ":1" }, run, {
+      onPermissionPrompt: () => {
+        events.push("auth");
+      },
+    });
+    assert.deepEqual(events, ["auth"]);
+    assert.deepEqual(run.calls, [
+      "env DISPLAY=':1' system76-power graphics hybrid",
+      "env DISPLAY=':1' pkexec system76-power graphics hybrid",
+    ]);
   });
 
   it("treats only an exact switchable line as switchable", async () => {

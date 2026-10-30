@@ -9,6 +9,7 @@ import {
 } from "./shell.ts";
 import {
   graphicsModeForUi,
+  isUnsupportedScsiHostProfileFailure,
   parseGraphicsOutput,
   parseProfileOutput,
   parseSwitchableOutput,
@@ -22,10 +23,16 @@ export type ExecResult = {
 
 export type CommandRunner = (command: string) => Promise<ExecResult>;
 
+export type System76RunOptions = {
+  /** Called once, before the pkexec retry, when the first attempt is denied. */
+  onPermissionPrompt?: () => void;
+};
+
 export async function runSystem76Power(
   args: string,
   env: SessionEnv,
   run: CommandRunner,
+  options: System76RunOptions = {},
 ): Promise<string> {
   let result = await run(system76PowerCommand(args, env));
 
@@ -33,6 +40,7 @@ export async function runSystem76Power(
     result.exitCode !== 0 &&
     execResultLooksLikePermissionDenied(result.stdOut, result.stdErr)
   ) {
+    options.onPermissionPrompt?.();
     result = await run(pkexecSystem76PowerCommand(args, env));
   }
 
@@ -98,18 +106,57 @@ export async function fetchSwitchable(
   );
 }
 
+export type ProfileApplyResult = {
+  /** True when a SCSI host rejected link power management but the profile was set. */
+  scsiLinkPmSkipped: boolean;
+};
+
 export async function applyProfile(
   profile: PowerProfile,
   env: SessionEnv,
   run: CommandRunner,
-): Promise<void> {
-  await runSystem76Power(`profile ${profile}`, env, run);
+): Promise<ProfileApplyResult> {
+  try {
+    await runSystem76Power(`profile ${profile}`, env, run);
+    return { scsiLinkPmSkipped: false };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!isUnsupportedScsiHostProfileFailure(message)) {
+      throw err;
+    }
+
+    // The daemon records the profile, returns this D-Bus error, and skips the
+    // desktop profile-changed signal. A second call sees the profile as
+    // already set, succeeds, and emits the signal.
+    try {
+      await runSystem76Power(`profile ${profile}`, env, run);
+      return { scsiLinkPmSkipped: true };
+    } catch (retryErr) {
+      const retryMessage =
+        retryErr instanceof Error ? retryErr.message : String(retryErr);
+      if (!isUnsupportedScsiHostProfileFailure(retryMessage)) {
+        throw retryErr;
+      }
+
+      let active: PowerProfile;
+      try {
+        active = await fetchProfile(env, run);
+      } catch {
+        throw err;
+      }
+      if (active !== profile) {
+        throw err;
+      }
+      return { scsiLinkPmSkipped: true };
+    }
+  }
 }
 
 export async function applyGraphics(
   mode: GraphicsMode,
   env: SessionEnv,
   run: CommandRunner,
+  options: System76RunOptions = {},
 ): Promise<void> {
-  await runSystem76Power(`graphics ${mode}`, env, run);
+  await runSystem76Power(`graphics ${mode}`, env, run, options);
 }

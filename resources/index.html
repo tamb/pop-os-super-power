@@ -5,23 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pop!_OS Super Power</title>
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/vendor/flaticon-uicons/rounded.css" />
   </head>
   <body>
     <main id="app">
       <header class="header">
-        <h1>Pop!_OS Super Power</h1>
-        <p class="subtitle">Power profiles &amp; GPU mode via <code>system76-power</code></p>
+        <div class="header-row">
+          <div class="header-titles">
+            <h1>
+              <i class="fi fi-rr-power" aria-hidden="true"></i>
+              Pop!_OS Super Power
+            </h1>
+            <p class="subtitle">Power profiles &amp; GPU mode via <code>system76-power</code></p>
+          </div>
+          <button
+            type="button"
+            id="refresh-btn"
+            class="btn-ghost"
+            aria-label="Refresh power profile and GPU status"
+          >
+            <i class="fi fi-rr-rotate-right" aria-hidden="true"></i>
+            <span>Refresh</span>
+          </button>
+        </div>
+        <p class="app-version">Version <span id="app-version"></span></p>
       </header>
 
-      <p id="load-error" class="banner banner-error hidden" role="alert"></p>
+      <div id="load-error" class="banner banner-error hidden" role="alert">
+        <p id="load-error-text" class="banner-text"></p>
+        <button type="button" id="load-error-copy" class="btn-copy" aria-label="Copy error message">
+          <i class="fi fi-rr-copy" aria-hidden="true"></i>
+          <span class="btn-label">Copy</span>
+        </button>
+      </div>
 
       <section class="panel" aria-labelledby="profile-heading">
         <h2 id="profile-heading">Power profile</h2>
         <p class="hint">Applies immediately. No reboot required.</p>
         <div class="toggle-group" id="profile-toggles" role="group" aria-label="Power profile">
-          <button type="button" class="toggle" data-value="battery">Battery</button>
-          <button type="button" class="toggle" data-value="balanced">Balanced</button>
-          <button type="button" class="toggle" data-value="performance">Performance</button>
+          <button type="button" class="toggle" data-value="battery">
+            <i class="fi fi-rr-battery-half" aria-hidden="true"></i>
+            <span>Battery</span>
+          </button>
+          <button type="button" class="toggle" data-value="balanced">
+            <i class="fi fi-rr-balance-scale-left" aria-hidden="true"></i>
+            <span>Balanced</span>
+          </button>
+          <button type="button" class="toggle" data-value="performance">
+            <i class="fi fi-rr-bolt" aria-hidden="true"></i>
+            <span>Performance</span>
+          </button>
         </div>
       </section>
 
@@ -29,18 +62,115 @@
         <h2 id="graphics-heading">GPU mode</h2>
         <p class="hint">Switching mode requires a reboot on Pop!_OS.</p>
         <div class="toggle-group" id="graphics-toggles" role="group" aria-label="GPU mode">
-          <button type="button" class="toggle" data-value="integrated">Integrated</button>
-          <button type="button" class="toggle" data-value="nvidia">Discrete</button>
-          <button type="button" class="toggle" data-value="hybrid">Hybrid</button>
+          <button type="button" class="toggle" data-value="integrated">
+            <i class="fi fi-rr-laptop" aria-hidden="true"></i>
+            <span>Integrated</span>
+          </button>
+          <button type="button" class="toggle" data-value="nvidia">
+            <i class="fi fi-rr-microchip" aria-hidden="true"></i>
+            <span>Discrete</span>
+          </button>
+          <button type="button" class="toggle" data-value="hybrid">
+            <i class="fi fi-rr-layers" aria-hidden="true"></i>
+            <span>Hybrid</span>
+          </button>
         </div>
+        <div
+          id="graphics-progress"
+          class="progress hidden"
+          role="progressbar"
+          aria-label="GPU mode change in progress"
+        >
+          <div class="progress-bar"></div>
+        </div>
+        <p id="graphics-progress-text" class="progress-text hidden"></p>
         <div id="reboot-banner" class="banner banner-warn hidden">
           <p>GPU mode was updated. Reboot to apply the new graphics mode.</p>
-          <button type="button" id="reboot-btn" class="btn-primary">Reboot now</button>
+          <button type="button" id="reboot-btn" class="btn-primary">
+            <i class="fi fi-rr-refresh" aria-hidden="true"></i>
+            <span>Reboot now</span>
+          </button>
         </div>
       </section>
 
-      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <div class="status-row">
+        <p id="status" class="status" role="status" aria-live="polite">
+          <span id="status-text"></span>
+          <span id="status-dots" class="busy-dots hidden" aria-hidden="true">
+            <span>.</span><span>.</span><span>.</span>
+          </span>
+        </p>
+        <button
+          type="button"
+          id="status-copy"
+          class="btn-copy hidden"
+          aria-label="Copy error message"
+        >
+          <i class="fi fi-rr-copy" aria-hidden="true"></i>
+          <span class="btn-label">Copy</span>
+        </button>
+      </div>
+
+      <nav class="project-links" aria-label="Project links">
+        <a href="https://github.com/tamb/pop-os-super-power" data-external>
+          <i class="fi fi-rr-code-branch" aria-hidden="true"></i>
+          <span>Repo</span>
+        </a>
+        <a href="https://github.com/tamb/pop-os-super-power/releases" data-external>
+          <i class="fi fi-rr-tags" aria-hidden="true"></i>
+          <span>Releases</span>
+        </a>
+        <a href="https://github.com/tamb/pop-os-super-power/issues" data-external>
+          <i class="fi fi-rr-bug" aria-hidden="true"></i>
+          <span>Issues</span>
+        </a>
+      </nav>
+      <footer class="app-footer">
+        <p class="icon-credit">
+          <a href="https://www.flaticon.com/uicons" data-external>Icons by Flaticon</a>
+        </p>
+        <button
+          type="button"
+          id="settings-btn"
+          class="btn-ghost"
+          aria-haspopup="dialog"
+          aria-controls="settings-dialog"
+        >
+          <i class="fi fi-rr-settings" aria-hidden="true"></i>
+          <span>Settings</span>
+        </button>
+      </footer>
     </main>
+
+    <dialog id="settings-dialog" class="modal" aria-labelledby="settings-heading">
+      <div class="modal-card">
+        <header class="modal-header">
+          <h2 id="settings-heading">Settings</h2>
+          <button type="button" id="settings-close" class="btn-icon" aria-label="Close settings">
+            <i class="fi fi-rr-cross" aria-hidden="true"></i>
+          </button>
+        </header>
+        <section class="modal-section" aria-labelledby="launcher-heading">
+          <h3 id="launcher-heading">Desktop launcher</h3>
+          <p class="hint">
+            Adds a Desktop icon and an application menu entry. Uninstall removes those
+            shortcuts and leaves the app in place.
+          </p>
+          <p id="launcher-status" class="hint" role="status"></p>
+          <p id="launcher-message" class="launcher-message hidden" role="status"></p>
+          <div class="modal-actions">
+            <button type="button" id="install-launcher-btn" class="btn-primary">
+              <i class="fi fi-rr-download" aria-hidden="true"></i>
+              <span>Install</span>
+            </button>
+            <button type="button" id="uninstall-launcher-btn" class="btn-ghost">
+              <i class="fi fi-rr-trash" aria-hidden="true"></i>
+              <span>Uninstall</span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </dialog>
 
     <script src="/js/neutralino.js"></script>
     <script type="module" src="/js/main.js"></script>

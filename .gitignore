@@ -15,3 +15,6 @@ neutralino.js
 
 # Compiled Neutralino UI bundle
 /resources/js/main.js
+
+# Flaticon UIcons copied from node_modules for the Neutralino document root
+/resources/vendor/
