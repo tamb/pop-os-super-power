@@ -42,3 +42,35 @@ export function shouldShowRebootBanner(
 ): boolean {
   return baseline !== null && selected !== baseline;
 }
+
+/**
+ * system76-power fails the whole profile switch when any SCSI host rejects
+ * link power management. Empty or firmware-locked AHCI ports return
+ * EOPNOTSUPP (os error 95, often `keep_firmware_settings`) or ENOENT
+ * (os error 2) when the policy file is missing. Other profile settings
+ * still apply.
+ */
+export function isUnsupportedScsiHostProfileFailure(message: string): boolean {
+  const marker = /errors found when setting profile:?/i.exec(message);
+  if (!marker) {
+    return false;
+  }
+
+  const body = message.slice(marker.index + marker[0].length);
+  const bullets = body
+    .split(/\s+-\s+(?=failed to )/i)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+
+  return bullets.length > 0 && bullets.every(isUnsupportedScsiLinkPmBullet);
+}
+
+function isUnsupportedScsiLinkPmBullet(bullet: string): boolean {
+  return (
+    /failed to set scsi host profiles/i.test(bullet) &&
+    /link time power management policy/i.test(bullet) &&
+    /operation not supported|no such file or directory|os error 95\b|os error 2\b/i.test(
+      bullet,
+    )
+  );
+}

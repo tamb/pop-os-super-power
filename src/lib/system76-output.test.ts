@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   graphicsModeForUi,
+  isUnsupportedScsiHostProfileFailure,
   parseGraphicsOutput,
   parseProfileOutput,
   parseSwitchableOutput,
@@ -69,6 +70,39 @@ describe("parseSwitchableOutput", () => {
 
   it("returns false otherwise", () => {
     assert.equal(parseSwitchableOutput("not switchable\n"), false);
+  });
+});
+
+describe("isUnsupportedScsiHostProfileFailure", () => {
+  const host3 =
+    "org.freedesktop.DBus.Error.Failed Errors found when setting profile: - failed to set scsi host profiles: failed to set link time power management policy med_power_with_dipm on host3: Operation not supported (os error 95)";
+
+  it("matches a firmware-locked AHCI host", () => {
+    assert.equal(isUnsupportedScsiHostProfileFailure(host3), true);
+  });
+
+  it("matches a missing link power policy file", () => {
+    const message = `org.freedesktop.DBus.Error.Failed: Errors found when setting profile:
+    - failed to set scsi host profiles: failed to set link time power management policy min_power on host0: No such file or directory (os error 2)`;
+    assert.equal(isUnsupportedScsiHostProfileFailure(message), true);
+  });
+
+  it("rejects a profile error that includes another failure", () => {
+    const message = `Errors found when setting profile:
+    - failed to set scsi host profiles: failed to set link time power management policy med_power_with_dipm on host3: Operation not supported (os error 95)
+    - failed to set pstate profiles: failed to set min_perf_pct: Permission denied (os error 13)`;
+    assert.equal(isUnsupportedScsiHostProfileFailure(message), false);
+  });
+
+  it("rejects unrelated system76-power errors", () => {
+    assert.equal(
+      isUnsupportedScsiHostProfileFailure("No such profile 'turbo'"),
+      false,
+    );
+    assert.equal(
+      isUnsupportedScsiHostProfileFailure("Errors found when setting profile:"),
+      false,
+    );
   });
 });
 

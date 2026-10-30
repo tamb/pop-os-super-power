@@ -49,8 +49,27 @@ npm run build
 ## Notes
 
 - Power profiles apply immediately.
-- Some systems may prompt for authentication (`pkexec`) when changing GPU mode.
+- Some systems may prompt for authentication (`pkexec`) when changing GPU mode. The GPU section shows a progress bar and status text while that command runs.
+- **Refresh** re-reads the power profile and GPU mode from `system76-power` so the toggles can be checked against the system.
+- The header shows the npm package version.
 - Reboot uses `loginctl reboot` (with `pkexec` fallback).
+
+## Desktop icon
+
+**Settings** in the app installs or removes a Desktop icon and an application menu entry. Install points the launcher at the running app when that copy has `resources.neu` beside it, and otherwise at the built binary under `dist/`.
+
+You can also install the same shortcuts from the command line after a Linux build:
+
+```bash
+npm run build
+npm run install:desktop
+```
+
+Remove them by deleting:
+
+- `~/Desktop/Pop!_OS Super Power.desktop`
+- `~/.local/share/applications/pop-os-super-power-linux_x64.desktop` (the name matches the binary so the app tray can find the icon; `linux_arm64` or `linux_armhf` on those machines)
+- `~/.local/share/icons/hicolor/256x256/apps/pop-os-super-power.png`
 
 ## License
 

@@ -10,4 +10,11 @@ describe("messageFromError", () => {
   it("stringifies non-errors", () => {
     assert.equal(messageFromError(404), "404");
   });
+
+  it("reads message from Neutralino error objects", () => {
+    assert.equal(
+      messageFromError({ code: "NE_FS_FILWRER", message: "denied" }),
+      "denied",
+    );
+  });
 });

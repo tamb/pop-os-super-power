@@ -6,8 +6,10 @@ import {
   fetchGraphicsMode as fetchGraphicsModeCore,
   fetchProfile as fetchProfileCore,
   fetchSwitchable as fetchSwitchableCore,
+  type ProfileApplyResult,
   rebootSystem as rebootSystemCore,
   runSystem76Power as runSystem76PowerCore,
+  type System76RunOptions,
 } from "../lib/power-client.ts";
 import { sessionEnvFromStrings } from "../lib/shell.ts";
 import { execCommand, getSessionEnv } from "./neutralino-runtime.ts";
@@ -41,12 +43,17 @@ export async function fetchSwitchable(): Promise<boolean> {
   return fetchSwitchableCore(await sessionEnv(), execCommand);
 }
 
-export async function applyProfile(profile: PowerProfile): Promise<void> {
-  await applyProfileCore(profile, await sessionEnv(), execCommand);
+export async function applyProfile(
+  profile: PowerProfile,
+): Promise<ProfileApplyResult> {
+  return applyProfileCore(profile, await sessionEnv(), execCommand);
 }
 
-export async function applyGraphics(mode: GraphicsMode): Promise<void> {
-  await applyGraphicsCore(mode, await sessionEnv(), execCommand);
+export async function applyGraphics(
+  mode: GraphicsMode,
+  options?: System76RunOptions,
+): Promise<void> {
+  await applyGraphicsCore(mode, await sessionEnv(), execCommand, options);
 }
 
 export { messageFromError } from "../lib/errors.ts";
