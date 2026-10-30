@@ -2,12 +2,15 @@ import {
   chooseLauncherTarget,
   desktopEntryContents,
   distLauncherBinary,
+  executableBaseName,
   type InstallState,
   iconThemeDirectory,
   installState,
+  LAUNCHER_ICON_NAME,
   type LauncherPaths,
   launcherPaths,
   launcherSearchRoots,
+  legacyMenuEntry,
   linuxBinarySuffix,
   parentDirectory,
   procExecutableCommand,
@@ -58,18 +61,30 @@ async function ensureDirectory(dir: string): Promise<void> {
   await runChecked(`mkdir -p ${shellQuote(dir)}`);
 }
 
+async function startupWmClassForHost(): Promise<string> {
+  const suffix = linuxBinarySuffix(await runChecked("uname -m"));
+  return suffix ? `pop-os-super-power-${suffix}` : "pop-os-super-power";
+}
+
 export async function readLauncherState(): Promise<{
   state: InstallState;
   paths: LauncherPaths;
 }> {
-  const paths = launcherPaths(await homeDirectory());
-  const [menuEntry, desktopEntry, icon] = await Promise.all([
+  const home = await homeDirectory();
+  const paths = launcherPaths(home, await startupWmClassForHost());
+  const legacy = legacyMenuEntry(home);
+  const [menuEntry, legacyMenu, desktopEntry, icon] = await Promise.all([
     pathExists(paths.menuEntry),
+    legacy === paths.menuEntry ? Promise.resolve(false) : pathExists(legacy),
     pathExists(paths.desktopEntry),
     pathExists(paths.icon),
   ]);
   return {
-    state: installState({ menuEntry, desktopEntry, icon }),
+    state: installState({
+      menuEntry: menuEntry || legacyMenu,
+      desktopEntry,
+      icon,
+    }),
     paths,
   };
 }
@@ -121,8 +136,10 @@ async function launcherTarget(): Promise<{
 }
 
 export async function installLaunchers(): Promise<LauncherPaths> {
-  const paths = launcherPaths(await homeDirectory());
+  const home = await homeDirectory();
   const target = await launcherTarget();
+  const startupWmClass = executableBaseName(target.execPath);
+  const paths = launcherPaths(home, startupWmClass);
   const iconResponse = await fetch("/icons/appIcon.png");
   if (!iconResponse.ok) {
     throw new Error("Could not read the application icon.");
@@ -135,13 +152,23 @@ export async function installLaunchers(): Promise<LauncherPaths> {
 
   const files = filesystem();
   await files.writeBinaryFile(paths.icon, iconBytes);
-  const contents = desktopEntryContents({
+  const shared = {
     execPath: target.execPath,
     workingDirectory: target.workingDirectory,
-    iconPath: paths.icon,
-  });
-  await files.writeFile(paths.menuEntry, contents);
-  await files.writeFile(paths.desktopEntry, contents);
+    startupWmClass,
+  };
+  await files.writeFile(
+    paths.menuEntry,
+    desktopEntryContents({ ...shared, icon: LAUNCHER_ICON_NAME }),
+  );
+  await files.writeFile(
+    paths.desktopEntry,
+    desktopEntryContents({ ...shared, icon: paths.icon }),
+  );
+  const legacy = legacyMenuEntry(home);
+  if (legacy !== paths.menuEntry && (await pathExists(legacy))) {
+    await files.remove(legacy);
+  }
   await runChecked(
     `chmod 755 ${shellQuote(paths.menuEntry)} ${shellQuote(paths.desktopEntry)}`,
   );
@@ -160,9 +187,15 @@ export async function installLaunchers(): Promise<LauncherPaths> {
 }
 
 export async function uninstallLaunchers(): Promise<void> {
-  const paths = launcherPaths(await homeDirectory());
+  const home = await homeDirectory();
+  const paths = launcherPaths(home, await startupWmClassForHost());
   const files = filesystem();
-  for (const filePath of [paths.menuEntry, paths.desktopEntry, paths.icon]) {
+  for (const filePath of [
+    paths.menuEntry,
+    legacyMenuEntry(home),
+    paths.desktopEntry,
+    paths.icon,
+  ]) {
     if (await pathExists(filePath)) {
       await files.remove(filePath);
     }

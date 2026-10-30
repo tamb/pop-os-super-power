@@ -21,7 +21,8 @@
     "filesystem.getStats",
     "filesystem.writeFile",
     "filesystem.writeBinaryFile",
-    "filesystem.remove"
+    "filesystem.remove",
+    "window.setIcon"
   ],
   "modes": {
     "window": {

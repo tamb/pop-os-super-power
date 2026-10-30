@@ -68,7 +68,7 @@ npm run install:desktop
 Remove them by deleting:
 
 - `~/Desktop/Pop!_OS Super Power.desktop`
-- `~/.local/share/applications/com.opensource.pop-os-super-power.desktop`
+- `~/.local/share/applications/pop-os-super-power-linux_x64.desktop` (the name matches the binary so the app tray can find the icon; `linux_arm64` or `linux_armhf` on those machines)
 - `~/.local/share/icons/hicolor/256x256/apps/pop-os-super-power.png`
 
 ## License

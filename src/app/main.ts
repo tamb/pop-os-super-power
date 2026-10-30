@@ -533,6 +533,9 @@ function bootApp(): void {
   Neutralino.init();
   Neutralino.events.on("windowClose", onWindowClose);
   $("app-version").textContent = __APP_VERSION__;
+  void Neutralino.window.setIcon("/resources/icons/appIcon.png").catch(() => {
+    // Wayland shells take the icon from the matching desktop file.
+  });
 
   void (async () => {
     wireProfileToggles();

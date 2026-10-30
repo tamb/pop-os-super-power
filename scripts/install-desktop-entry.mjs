@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { access, chmod, copyFile, mkdir, writeFile } from "node:fs/promises";
+import { access, chmod, copyFile, mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,7 +37,9 @@ const iconDir = path.join(
 const iconDest = path.join(iconDir, `${iconName}.png`);
 const applicationsDir = path.join(os.homedir(), ".local", "share", "applications");
 const desktopDir = path.join(os.homedir(), "Desktop");
-const menuEntry = path.join(applicationsDir, `${appId}.desktop`);
+const startupWmClass = path.basename(execPath);
+const menuEntry = path.join(applicationsDir, `${startupWmClass}.desktop`);
+const legacyMenuEntry = path.join(applicationsDir, `${appId}.desktop`);
 const desktopEntry = path.join(desktopDir, "Pop!_OS Super Power.desktop");
 
 await mkdir(iconDir, { recursive: true });
@@ -45,7 +47,7 @@ await mkdir(applicationsDir, { recursive: true });
 await mkdir(desktopDir, { recursive: true });
 await copyFile(iconSrc, iconDest);
 
-function desktopFile() {
+function desktopFile(icon) {
   return `[Desktop Entry]
 Type=Application
 Version=1.0
@@ -53,17 +55,19 @@ Name=Pop!_OS Super Power
 Comment=Power profiles and GPU mode for Pop!_OS
 Exec=${execPath}
 Path=${binDir}
-Icon=${iconDest}
+Icon=${icon}
 Terminal=false
 Categories=Settings;
 StartupNotify=true
-StartupWMClass=pop-os-super-power
+StartupWMClass=${startupWmClass}
 `;
 }
 
-const contents = desktopFile();
-await writeFile(menuEntry, contents);
-await writeFile(desktopEntry, contents);
+await writeFile(menuEntry, desktopFile(iconName));
+await writeFile(desktopEntry, desktopFile(iconDest));
+if (legacyMenuEntry !== menuEntry) {
+  await rm(legacyMenuEntry, { force: true });
+}
 await chmod(menuEntry, 0o755);
 await chmod(desktopEntry, 0o755);
 

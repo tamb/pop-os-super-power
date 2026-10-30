@@ -27,13 +27,34 @@ export function parentDirectory(filePath: string): string {
   return trimmed.slice(0, index);
 }
 
-export function launcherPaths(home: string): LauncherPaths {
+/** Wayland app id is the executable's file name. The desktop file must use it. */
+export function executableBaseName(execPath: string): string {
+  const trimmed = execPath.replace(/\/+$/, "");
+  const slash = trimmed.lastIndexOf("/");
+  const name = slash < 0 ? trimmed : trimmed.slice(slash + 1);
+  if (!/^[A-Za-z0-9._-]+$/.test(name)) {
+    throw new Error("Could not name the application launcher.");
+  }
+  return name;
+}
+
+export function launcherPaths(
+  home: string,
+  startupWmClass: string = LAUNCHER_APP_ID,
+): LauncherPaths {
   const root = home.replace(/\/+$/, "");
+  const desktopId = executableBaseName(startupWmClass);
   return {
-    menuEntry: `${root}/.local/share/applications/${LAUNCHER_APP_ID}.desktop`,
+    menuEntry: `${root}/.local/share/applications/${desktopId}.desktop`,
     desktopEntry: `${root}/Desktop/${LAUNCHER_DESKTOP_NAME}`,
     icon: `${root}/.local/share/icons/hicolor/256x256/apps/${LAUNCHER_ICON_NAME}.png`,
   };
+}
+
+/** Earlier installs used the application id instead of the binary name. */
+export function legacyMenuEntry(home: string): string {
+  const root = home.replace(/\/+$/, "");
+  return `${root}/.local/share/applications/${LAUNCHER_APP_ID}.desktop`;
 }
 
 export function iconThemeDirectory(iconPath: string): string {
@@ -68,8 +89,12 @@ export function desktopExecValue(execPath: string): string {
 export function desktopEntryContents(input: {
   execPath: string;
   workingDirectory: string;
-  iconPath: string;
+  /** Theme icon name or an absolute PNG path. */
+  icon: string;
+  startupWmClass?: string;
 }): string {
+  const startupWmClass =
+    input.startupWmClass ?? executableBaseName(input.execPath);
   return `[Desktop Entry]
 Type=Application
 Version=1.0
@@ -77,11 +102,11 @@ Name=Pop!_OS Super Power
 Comment=Power profiles and GPU mode for Pop!_OS
 Exec=${desktopExecValue(input.execPath)}
 Path=${input.workingDirectory}
-Icon=${input.iconPath}
+Icon=${input.icon}
 Terminal=false
 Categories=Settings;
 StartupNotify=true
-StartupWMClass=pop-os-super-power
+StartupWMClass=${executableBaseName(startupWmClass)}
 `;
 }
 

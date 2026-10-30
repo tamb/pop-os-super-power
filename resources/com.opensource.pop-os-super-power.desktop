@@ -8,4 +8,4 @@ Icon=pop-os-super-power
 Terminal=false
 Categories=Settings;
 StartupNotify=true
-StartupWMClass=pop-os-super-power
+StartupWMClass=pop-os-super-power-linux_x64

@@ -10,6 +10,7 @@ import {
   isAppBinary,
   launcherPaths,
   launcherSearchRoots,
+  legacyMenuEntry,
   linuxBinarySuffix,
   parentDirectory,
   procExecutableCommand,
@@ -18,12 +19,24 @@ import {
 const HOME = "/home/user";
 
 describe("launcherPaths", () => {
-  it("builds the menu, desktop, and icon paths", () => {
-    assert.deepEqual(launcherPaths(`${HOME}/`), {
-      menuEntry: `${HOME}/.local/share/applications/com.opensource.pop-os-super-power.desktop`,
-      desktopEntry: `${HOME}/Desktop/Pop!_OS Super Power.desktop`,
-      icon: `${HOME}/.local/share/icons/hicolor/256x256/apps/pop-os-super-power.png`,
-    });
+  it("names the menu entry after the running binary", () => {
+    assert.deepEqual(
+      launcherPaths(`${HOME}/`, "pop-os-super-power-linux_x64"),
+      {
+        menuEntry: `${HOME}/.local/share/applications/pop-os-super-power-linux_x64.desktop`,
+        desktopEntry: `${HOME}/Desktop/Pop!_OS Super Power.desktop`,
+        icon: `${HOME}/.local/share/icons/hicolor/256x256/apps/pop-os-super-power.png`,
+      },
+    );
+  });
+});
+
+describe("legacyMenuEntry", () => {
+  it("points at the older application-id launcher", () => {
+    assert.equal(
+      legacyMenuEntry(HOME),
+      `${HOME}/.local/share/applications/com.opensource.pop-os-super-power.desktop`,
+    );
   });
 });
 
@@ -66,14 +79,14 @@ describe("desktopEntryContents", () => {
     const text = desktopEntryContents({
       execPath: "/opt/app/pop-os-super-power-linux_x64",
       workingDirectory: "/opt/app",
-      iconPath:
-        "/home/user/.local/share/icons/hicolor/256x256/apps/pop-os-super-power.png",
+      icon: "pop-os-super-power",
     });
     assert.match(text, /^Type=Application$/m);
     assert.match(text, /^Exec=\/opt\/app\/pop-os-super-power-linux_x64$/m);
     assert.match(text, /^Path=\/opt\/app$/m);
+    assert.match(text, /^Icon=pop-os-super-power$/m);
     assert.match(text, /^Categories=Settings;$/m);
-    assert.match(text, /pop-os-super-power\.png$/m);
+    assert.match(text, /^StartupWMClass=pop-os-super-power-linux_x64$/m);
   });
 
   it("quotes an executable path that contains spaces", () => {
