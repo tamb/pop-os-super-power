@@ -3,9 +3,11 @@ import {
   desktopEntryContents,
   distLauncherBinary,
   executableBaseName,
+  filesToUninstall,
   type InstallState,
   iconThemeDirectory,
   installState,
+  LAUNCHER_DESKTOP_NAME,
   LAUNCHER_ICON_NAME,
   type LauncherPaths,
   launcherPaths,
@@ -188,21 +190,22 @@ export async function installLaunchers(): Promise<LauncherPaths> {
 
 export async function uninstallLaunchers(): Promise<void> {
   const home = await homeDirectory();
-  const paths = launcherPaths(home, await startupWmClassForHost());
+  const startupWmClass = await startupWmClassForHost();
+  const paths = launcherPaths(home, startupWmClass);
+  const applicationsDir = parentDirectory(paths.menuEntry);
   const files = filesystem();
-  for (const filePath of [
-    paths.menuEntry,
-    legacyMenuEntry(home),
-    paths.desktopEntry,
-    paths.icon,
-  ]) {
+  for (const filePath of filesToUninstall(home, startupWmClass)) {
     if (await pathExists(filePath)) {
       await files.remove(filePath);
     }
   }
-  await execCommand(
-    `update-desktop-database ${shellQuote(parentDirectory(paths.menuEntry))}`,
+  await runChecked(
+    `find ${shellQuote(applicationsDir)} -maxdepth 1 -type f -name ${shellQuote("pop-os-super-power*.desktop")} -delete`,
   );
+  await runChecked(
+    `find ${shellQuote(parentDirectory(paths.desktopEntry))} -maxdepth 1 -type f -name ${shellQuote(LAUNCHER_DESKTOP_NAME)} -delete`,
+  );
+  await execCommand(`update-desktop-database ${shellQuote(applicationsDir)}`);
   await execCommand(
     `gtk-update-icon-cache -f -t ${shellQuote(iconThemeDirectory(paths.icon))}`,
   );

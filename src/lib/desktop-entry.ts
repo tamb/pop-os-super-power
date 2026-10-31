@@ -57,6 +57,20 @@ export function legacyMenuEntry(home: string): string {
   return `${root}/.local/share/applications/${LAUNCHER_APP_ID}.desktop`;
 }
 
+/** Every launcher file Uninstall should remove, including older names. */
+export function filesToUninstall(
+  home: string,
+  startupWmClass: string,
+): string[] {
+  const paths = launcherPaths(home, startupWmClass);
+  const files = [paths.menuEntry, paths.desktopEntry, paths.icon];
+  const legacy = legacyMenuEntry(home);
+  if (!files.includes(legacy)) {
+    files.push(legacy);
+  }
+  return files;
+}
+
 export function iconThemeDirectory(iconPath: string): string {
   return parentDirectory(parentDirectory(parentDirectory(iconPath)));
 }

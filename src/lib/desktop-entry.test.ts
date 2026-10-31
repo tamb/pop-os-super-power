@@ -5,6 +5,7 @@ import {
   desktopEntryContents,
   desktopExecValue,
   distLauncherBinary,
+  filesToUninstall,
   iconThemeDirectory,
   installState,
   isAppBinary,
@@ -28,6 +29,17 @@ describe("launcherPaths", () => {
         icon: `${HOME}/.local/share/icons/hicolor/256x256/apps/pop-os-super-power.png`,
       },
     );
+  });
+});
+
+describe("filesToUninstall", () => {
+  it("includes the binary launcher, the desktop shortcut, the icon, and the old menu name", () => {
+    assert.deepEqual(filesToUninstall(HOME, "pop-os-super-power-linux_x64"), [
+      `${HOME}/.local/share/applications/pop-os-super-power-linux_x64.desktop`,
+      `${HOME}/Desktop/Pop!_OS Super Power.desktop`,
+      `${HOME}/.local/share/icons/hicolor/256x256/apps/pop-os-super-power.png`,
+      `${HOME}/.local/share/applications/com.opensource.pop-os-super-power.desktop`,
+    ]);
   });
 });
 

@@ -430,6 +430,75 @@ async function refreshLauncherStatus(options?: {
   }
 }
 
+function askConfirm(
+  title: string,
+  body: string,
+  acceptLabel: string,
+): Promise<boolean> {
+  const dialog = $("confirm-dialog") as HTMLDialogElement;
+  if (dialog.open) {
+    return Promise.resolve(false);
+  }
+  $("confirm-title").textContent = title;
+  $("confirm-body").textContent = body;
+  $("confirm-accept").textContent = acceptLabel;
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let acceptBackdrop = false;
+    const accept = $("confirm-accept");
+    const cancel = $("confirm-cancel");
+    const finish = (accepted: boolean) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      accept.removeEventListener("click", onAccept);
+      cancel.removeEventListener("click", onCancel);
+      dialog.removeEventListener("click", onBackdrop);
+      dialog.removeEventListener("cancel", onEscape);
+      if (dialog.open) {
+        dialog.close();
+      }
+      resolve(accepted);
+    };
+    const onAccept = () => finish(true);
+    const onCancel = () => finish(false);
+    const onBackdrop = (event: MouseEvent) => {
+      if (acceptBackdrop && event.target === dialog) {
+        finish(false);
+      }
+    };
+    const onEscape = (event: Event) => {
+      event.preventDefault();
+      finish(false);
+    };
+    // Wait until the opening click is finished. Otherwise that click lands
+    // on the new dialog and immediately cancels it.
+    window.setTimeout(() => {
+      if (settled || dialog.open) {
+        finish(false);
+        return;
+      }
+      accept.addEventListener("click", onAccept);
+      cancel.addEventListener("click", onCancel);
+      dialog.addEventListener("click", onBackdrop);
+      dialog.addEventListener("cancel", onEscape);
+      dialog.addEventListener(
+        "close",
+        () => {
+          finish(false);
+        },
+        { once: true },
+      );
+      dialog.showModal();
+      window.setTimeout(() => {
+        acceptBackdrop = true;
+      }, 200);
+    }, 0);
+  });
+}
+
 function wireSettings(): void {
   const dialog = $("settings-dialog") as HTMLDialogElement;
   $("settings-btn").addEventListener("click", () => {
@@ -465,13 +534,12 @@ async function runLauncherAction(
   applyLauncherButtons(null);
   try {
     if (action === "uninstall") {
-      const choice = await Neutralino.os.showMessageBox(
+      const accepted = await askConfirm(
         "Remove launchers?",
         "This removes the Desktop icon and the application menu entry. The app stays installed.",
-        "YES_NO",
-        "QUESTION",
+        "Uninstall",
       );
-      if (choice !== "YES") {
+      if (!accepted) {
         return;
       }
     }
@@ -498,13 +566,12 @@ async function runLauncherAction(
 function wireReboot(): void {
   $("reboot-btn").addEventListener("click", () => {
     void (async () => {
-      const choice = await Neutralino.os.showMessageBox(
+      const accepted = await askConfirm(
         "Reboot now?",
         "Your computer will restart to apply the new GPU mode.",
-        "YES_NO",
-        "QUESTION",
+        "Reboot",
       );
-      if (choice !== "YES") {
+      if (!accepted) {
         return;
       }
 
@@ -512,14 +579,7 @@ function wireReboot(): void {
       try {
         await rebootSystem();
       } catch (err) {
-        const message = messageFromError(err);
-        setStatus(message, "error");
-        await Neutralino.os.showMessageBox(
-          "Reboot failed",
-          message,
-          "OK",
-          "ERROR",
-        );
+        setStatus(messageFromError(err), "error");
       }
     })();
   });
