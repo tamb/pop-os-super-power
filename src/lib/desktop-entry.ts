@@ -113,7 +113,7 @@ export function desktopEntryContents(input: {
 Type=Application
 Version=1.0
 Name=Pop!_OS Super Power
-Comment=Power profiles and GPU mode for Pop!_OS
+Comment=Power profiles, GPU mode, and night light for Pop!_OS
 Exec=${desktopExecValue(input.execPath)}
 Path=${input.workingDirectory}
 Icon=${input.icon}

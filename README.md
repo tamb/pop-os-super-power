@@ -4,6 +4,7 @@ A small [NeutralinoJS](https://neutralino.js.org/) desktop app for Pop!_OS that 
 
 - **Power profiles** — Battery, Balanced, Performance (`system76-power profile`)
 - **GPU mode** — Integrated, Discrete (NVIDIA), Hybrid (`system76-power graphics`)
+- **Night light** — on, off, and color temperature, when the optional `cosmic-nightlight` package is installed
 
 GPU mode changes show a **Reboot now** button because Pop!_OS requires a restart after switching graphics modes.
 
@@ -53,6 +54,7 @@ npm run build
 - **Refresh** re-reads the power profile and GPU mode from `system76-power` so the toggles can be checked against the system.
 - The header shows the npm package version.
 - Reboot uses `loginctl reboot` (with `pkexec` fallback).
+- Night light reads and writes `~/.config/cosmic/io.github.cosmic_nightlight/`. The app does not install that package. Pop!_OS does not ship it, and COSMIC's own Night light page does not tint the screen yet. The screen can flicker when the tint changes, and the first change may ask for a password.
 
 ## Desktop icon
 

@@ -94,6 +94,10 @@ describe("desktopEntryContents", () => {
       icon: "pop-os-super-power",
     });
     assert.match(text, /^Type=Application$/m);
+    assert.match(
+      text,
+      /^Comment=Power profiles, GPU mode, and night light for Pop!_OS$/m,
+    );
     assert.match(text, /^Exec=\/opt\/app\/pop-os-super-power-linux_x64$/m);
     assert.match(text, /^Path=\/opt\/app$/m);
     assert.match(text, /^Icon=pop-os-super-power$/m);

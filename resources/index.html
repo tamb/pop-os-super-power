@@ -4,6 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pop!_OS Super Power</title>
+    <meta
+      name="description"
+      content="Pop!_OS power profile, GPU mode, and night light controls."
+    />
+    <meta
+      name="keywords"
+      content="Pop!_OS, power profiles, GPU mode, night light, nightlight, blue light, color temperature, system76-power"
+    />
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/vendor/flaticon-uicons/rounded.css" />
   </head>
@@ -16,13 +24,13 @@
               <i class="fi fi-rr-power" aria-hidden="true"></i>
               Pop!_OS Super Power
             </h1>
-            <p class="subtitle">Power profiles &amp; GPU mode via <code>system76-power</code></p>
+            <p class="subtitle">Power profiles, GPU mode, and night light</p>
           </div>
           <button
             type="button"
             id="refresh-btn"
             class="btn-ghost"
-            aria-label="Refresh power profile and GPU status"
+            aria-label="Refresh power profile, GPU status, and night light"
           >
             <i class="fi fi-rr-rotate-right" aria-hidden="true"></i>
             <span>Refresh</span>
@@ -91,6 +99,57 @@
             <span>Reboot now</span>
           </button>
         </div>
+      </section>
+
+      <section class="panel" id="night-light-panel" aria-labelledby="night-light-heading">
+        <h2 id="night-light-heading">
+          <i class="fi fi-rr-moon" aria-hidden="true"></i>
+          Night light
+        </h2>
+        <p class="hint">
+          Warms the screen to cut blue light. The screen may flicker briefly, and the
+          first change may ask for your password.
+        </p>
+        <p id="night-light-missing" class="hint hidden">
+          Night Light is not installed. Pop!_OS does not include it, so this control
+          cannot change the screen until the cosmic-nightlight package is installed.
+        </p>
+        <div class="toggle-group" id="night-light-toggles" role="group" aria-label="Night light">
+          <button type="button" class="toggle" data-value="off">
+            <span>Off</span>
+          </button>
+          <button type="button" class="toggle" data-value="on">
+            <span>On</span>
+          </button>
+        </div>
+        <div class="temp-row">
+          <div class="temp-heading">
+            <label for="night-light-temp">Color temperature</label>
+            <span id="night-light-kelvin">4500 K</span>
+            <button
+              type="button"
+              id="night-light-reset"
+              class="btn-ghost btn-reset"
+              aria-label="Reset color temperature to 4500 K"
+            >
+              <i class="fi fi-rr-undo" aria-hidden="true"></i>
+              <span>Reset</span>
+            </button>
+          </div>
+          <input
+            id="night-light-temp"
+            type="range"
+            min="2500"
+            max="6500"
+            step="50"
+            value="4500"
+          />
+          <div class="temp-scale">
+            <span>Warmer</span>
+            <span>Cooler</span>
+          </div>
+        </div>
+        <p id="night-light-schedule" class="hint night-light-schedule hidden"></p>
       </section>
 
       <div class="status-row">

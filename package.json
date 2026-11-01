@@ -3,7 +3,7 @@
   "version": "1.0.0-alpha.0",
   "private": true,
   "type": "module",
-  "description": "Pop!_OS power profile and GPU mode controls",
+  "description": "Pop!_OS power profile, GPU mode, and night light controls",
   "keywords": [
     "pop-os",
     "power",
@@ -13,7 +13,12 @@
     "super-power",
     "graphics card",
     "battery life",
-    "power profiles"
+    "power profiles",
+    "night light",
+    "nightlight",
+    "blue light",
+    "color temperature",
+    "blue light filter"
   ],
   "license": "MIT",
   "scripts": {

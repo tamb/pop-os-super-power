@@ -5,12 +5,24 @@ import {
   type PowerProfile,
 } from "../lib/constants.ts";
 import type { InstallState } from "../lib/desktop-entry.ts";
+import {
+  type NightLightSettings,
+  nightLightResetEnabled,
+  nightLightResetKelvin,
+  nightLightScheduleNote,
+  nightLightTintOn,
+} from "../lib/night-light.ts";
 import { shouldShowRebootBanner } from "../lib/system76-output.ts";
 import {
   installLaunchers,
   readLauncherState,
   uninstallLaunchers,
 } from "./launcher-client.ts";
+import {
+  readNightLight,
+  setNightLightOverride,
+  setNightLightTemperature,
+} from "./night-light-client.ts";
 import {
   applyGraphics,
   applyProfile,
@@ -48,6 +60,7 @@ const LAUNCHER_STATUS: Record<InstallState, string> = {
 let graphicsBaseline: GraphicsMode | null = null;
 let busy = false;
 let inputsEnabled = false;
+let nightLightInstalled = false;
 let launcherBusy = false;
 
 const APP_TITLE = "Pop!_OS Super Power";
@@ -91,8 +104,9 @@ function setGraphicsProgress(message: string | null): void {
 
 function applyInputState(): void {
   const disabled = !inputsEnabled || busy;
+  const nightDisabled = !nightLightInstalled || busy;
   const graphicsOff = $("graphics-panel").classList.contains("is-disabled");
-  ($("refresh-btn") as HTMLButtonElement).disabled = disabled;
+  ($("refresh-btn") as HTMLButtonElement).disabled = busy;
   ($("reboot-btn") as HTMLButtonElement).disabled = disabled;
   document.querySelectorAll("#profile-toggles .toggle").forEach((node) => {
     (node as HTMLButtonElement).disabled = disabled;
@@ -100,6 +114,15 @@ function applyInputState(): void {
   document.querySelectorAll("#graphics-toggles .toggle").forEach((node) => {
     (node as HTMLButtonElement).disabled = disabled || graphicsOff;
   });
+  document.querySelectorAll("#night-light-toggles .toggle").forEach((node) => {
+    (node as HTMLButtonElement).disabled = nightDisabled;
+  });
+  ($("night-light-temp") as HTMLInputElement).disabled = nightDisabled;
+  ($("night-light-reset") as HTMLButtonElement).disabled =
+    !nightLightResetEnabled(
+      Number(($("night-light-temp") as HTMLInputElement).value),
+      !nightDisabled,
+    );
 }
 
 function setLoadError(message: string): void {
@@ -369,19 +392,129 @@ function wireGraphicsToggles(): void {
   });
 }
 
+function renderNightLight(settings: NightLightSettings): string {
+  const tint = nightLightTintOn(settings, minuteOfDay());
+  let active = "";
+  if (tint === true) {
+    active = "on";
+  } else if (tint === false) {
+    active = "off";
+  }
+  setActiveToggle("night-light-toggles", active);
+  const slider = $("night-light-temp") as HTMLInputElement;
+  if (document.activeElement !== slider) {
+    slider.value = String(settings.temperature);
+  }
+  $("night-light-kelvin").textContent = `${slider.value} K`;
+  const note = nightLightScheduleNote(settings);
+  const schedule = $("night-light-schedule");
+  schedule.textContent = note ?? "";
+  schedule.classList.toggle("hidden", note === null);
+  if (!nightLightInstalled) {
+    return "";
+  }
+  if (tint === true) {
+    return "Night light is on.";
+  }
+  if (tint === false) {
+    return "Night light is off.";
+  }
+  return "Night light is following sunrise and sunset.";
+}
+
+function minuteOfDay(): number {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+async function refreshNightLight(): Promise<string> {
+  const { installed, settings } = await readNightLight();
+  nightLightInstalled = installed;
+  $("night-light-panel").classList.toggle("is-disabled", !installed);
+  $("night-light-missing").classList.toggle("hidden", installed);
+  const summary = renderNightLight(settings);
+  applyInputState();
+  return summary;
+}
+
+function wireNightLight(): void {
+  document.querySelectorAll("#night-light-toggles .toggle").forEach((node) => {
+    const btn = node as HTMLButtonElement;
+    btn.addEventListener("click", () => {
+      const value = btn.dataset.value;
+      if (value !== "on" && value !== "off") {
+        return;
+      }
+      const label = value === "on" ? "on" : "off";
+      void withBusy(`Turning night light ${label}`, async () => {
+        try {
+          await setNightLightOverride(value);
+          await refreshNightLight();
+          setStatus(`Night light turned ${label}.`);
+        } catch (err) {
+          setStatus(messageFromError(err), "error");
+        }
+      });
+    });
+  });
+
+  const slider = $("night-light-temp") as HTMLInputElement;
+  slider.addEventListener("input", () => {
+    $("night-light-kelvin").textContent = `${slider.value} K`;
+    applyInputState();
+  });
+  $("night-light-reset").addEventListener("click", () => {
+    const kelvin = nightLightResetKelvin();
+    slider.value = String(kelvin);
+    $("night-light-kelvin").textContent = `${kelvin} K`;
+    void withBusy("Resetting night light temperature", async () => {
+      try {
+        await setNightLightTemperature(kelvin);
+        await refreshNightLight();
+        setStatus(`Night light temperature reset to ${kelvin} K.`);
+      } catch (err) {
+        setStatus(messageFromError(err), "error");
+        await refreshNightLight();
+      }
+    });
+  });
+  slider.addEventListener("change", () => {
+    const kelvin = Number(slider.value);
+    void withBusy("Setting night light temperature", async () => {
+      try {
+        await setNightLightTemperature(kelvin);
+        await refreshNightLight();
+        setStatus(`Night light temperature set to ${kelvin} K.`);
+      } catch (err) {
+        setStatus(messageFromError(err), "error");
+        await refreshNightLight();
+      }
+    });
+  });
+}
+
 function wireRefresh(): void {
   const button = $("refresh-btn");
   button.addEventListener("click", () => {
     void (async () => {
       button.classList.add("is-spinning");
       try {
-        await withBusy("Refreshing power and GPU status", async () => {
+        await withBusy("Refreshing power, GPU, and night light", async () => {
           try {
             await refreshState({ announce: true });
           } catch (err) {
             const message = messageFromError(err);
             setLoadError(message);
             setStatus(message, "error");
+          }
+          try {
+            const night = await refreshNightLight();
+            if (night && !$("status").classList.contains("is-error")) {
+              const current = $("status-text").textContent ?? "";
+              setStatus(`${current} ${night}`.trim());
+            }
+          } catch (err) {
+            setStatus(messageFromError(err), "error");
           }
         });
       } finally {
@@ -600,6 +733,7 @@ function bootApp(): void {
   void (async () => {
     wireProfileToggles();
     wireGraphicsToggles();
+    wireNightLight();
     wireRefresh();
     wireReboot();
     wireSettings();
@@ -611,16 +745,21 @@ function bootApp(): void {
       setLoadError(
         "system76-power was not found. Install Pop!_OS system76-power or run on a supported laptop.",
       );
-      return;
+    } else {
+      inputsEnabled = true;
+      try {
+        await refreshState();
+      } catch (err) {
+        const message = messageFromError(err);
+        setLoadError(message);
+        setStatus(message, "error");
+      }
     }
 
-    inputsEnabled = true;
     try {
-      await refreshState();
+      await refreshNightLight();
     } catch (err) {
-      const message = messageFromError(err);
-      setLoadError(message);
-      setStatus(message, "error");
+      setStatus(messageFromError(err), "error");
     } finally {
       applyInputState();
     }

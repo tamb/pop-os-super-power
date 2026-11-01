@@ -135,9 +135,61 @@ body {
 }
 
 .panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   margin: 0 0 0.25rem;
   font-size: 0.95rem;
   font-weight: 600;
+}
+
+.panel h2 .fi {
+  color: var(--accent);
+}
+
+.temp-row {
+  margin-top: 0.95rem;
+}
+
+.temp-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.temp-heading label {
+  margin-right: auto;
+}
+
+.btn-reset {
+  margin-top: 0;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+#night-light-temp {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+#night-light-temp:disabled {
+  opacity: 0.45;
+}
+
+.temp-scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.night-light-schedule {
+  margin-top: 0.85rem;
+  margin-bottom: 0;
 }
 
 .hint {
